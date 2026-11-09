@@ -1,0 +1,26 @@
+# Same Express app, second cloud: GitHub Actions -> Google Cloud Run with Workload Identity Federation.
+# Copy to .github/workflows/cloud-run.yml. Needs repository variables WIF_PROVIDER, DEPLOY_SA, GCP_PROJECT
+# (GCP_PROJECT is jackson-isiko for the instructor; create the pool and provider with Week 5's scripts/deploy-lab5-keyless-ci.sh pattern; the service account
+# needs roles/run.admin, roles/artifactregistry.writer and roles/iam.serviceAccountUser).
+name: deploy-cloud-run
+on:
+  push:
+    branches: [main]
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Build and deploy from source (Cloud Build builds the container; no Dockerfile needed)
+        run: |
+          gcloud run deploy canyon-schedule --source . --region us-central1 --allow-unauthenticated \
+            --project ${{ vars.GCP_PROJECT }} --quiet
+          echo "LIVE_URL=$(gcloud run services describe canyon-schedule --region us-central1 --project ${{ vars.GCP_PROJECT }} --format='value(status.url)')" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,94 @@
+{
+  "wa-01-create-form": [
+    1600,
+    1288
+  ],
+  "wa-03-resource-group": [
+    1600,
+    995
+  ],
+  "wa-04-plan": [
+    1600,
+    995
+  ],
+  "term-01-azure": [
+    1180,
+    154
+  ],
+  "wa-05-overview": [
+    1600,
+    995
+  ],
+  "term-02-repo": [
+    1180,
+    814
+  ],
+  "gh-01-repo": [
+    1600,
+    995
+  ],
+  "wa-06-deploy-center": [
+    1600,
+    995
+  ],
+  "wa-07-deploy-logs": [
+    1600,
+    995
+  ],
+  "term-03-connect": [
+    1180,
+    220
+  ],
+  "term-05-gh-runs": [
+    1180,
+    682
+  ],
+  "gh-02-actions": [
+    1600,
+    995
+  ],
+  "gh-03-run": [
+    1600,
+    995
+  ],
+  "gh-04-workflow": [
+    1600,
+    995
+  ],
+  "gh-05-secrets": [
+    1600,
+    995
+  ],
+  "term-04-drill": [
+    1180,
+    154
+  ],
+  "wa-08-live-site": [
+    1366,
+    348
+  ],
+  "gh-00-new-repo": [
+    1600,
+    995
+  ],
+  "local-01-npm-start": [
+    1600,
+    278
+  ],
+  "wa-02a-basics-filled": [
+    1600,
+    995
+  ],
+  "wa-02b-plan-filled": [
+    1600,
+    995
+  ],
+  "wa-02c-review": [
+    1600,
+    995
+  ],
+  "gh-06-job-steps": [
+    1600,
+    995
+  ]
+}

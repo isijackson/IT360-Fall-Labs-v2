@@ -1,0 +1,13 @@
+{
+  "term-01-setup": [1180, 242],
+  "jk-01-login": [1600, 995],
+  "jk-02-dashboard": [1600, 995],
+  "jk-03-credentials": [1600, 995],
+  "jk-04-add-credential": [1600, 995],
+  "jk-05-job": [1600, 995],
+  "jk-06-configure": [1600, 995],
+  "jk-07-console": [1600, 995],
+  "term-02-build2-console": [1180, 682],
+  "term-03-registry": [1180, 176],
+  "term-02-builds": [1180, 1298]
+}

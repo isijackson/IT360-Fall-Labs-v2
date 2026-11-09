@@ -1,0 +1,15 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: loan-calc-frontend-only
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: loan-calc-chart
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          role: frontend

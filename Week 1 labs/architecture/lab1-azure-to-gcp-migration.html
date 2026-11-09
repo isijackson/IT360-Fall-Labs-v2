@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body><div id="canvas">
+<h1>Week 1 Lab 1: Virtual machine migration, Azure to Google Cloud</h1>
+<p class="sub">Infrastructure architecture. Source: an Ubuntu 22.04 Apache web server on Azure. Target: the same server, byte for byte, running on Google Compute Engine. Driven by the laptop with the Azure CLI, gcloud, qemu-img and GNU tar.</p>
+<div class="row">
+  <div class="lap"><h2>Instructor laptop</h2>
+    <div class="box"><b>Control plane</b>az login (Default Directory tenant)<br>gcloud auth (project jackson-isiko)<br><span class="tag">deploy-lab1.sh</span><span class="tag">verify-lab1.sh</span><span class="tag">destroy-lab1.sh</span></div>
+    <div class="box"><b>Transfer and convert</b>curl disk.qcow2 (about 1 GB)<br>qemu-img convert to raw (30 GB sparse)<br>gtar oldgnu to disk.tar.gz</div>
+  </div>
+  <div class="flow"><div class="arrow">&#8594;</div>1. az vm create<br>2. ssh: apt install apache2<br>3. prepare OS for GCE<br>4. fsfreeze + qemu-img</div>
+  <div class="cloud az"><h2><span class="badge">AZURE</span> Subscription: Ensign College - School Card</h2>
+    <div class="box net"><b>Resource group apacheserver1-rg (eastus)</b>VNet apacheserver1VNET, subnet, public IP (Standard)<br>NSG apacheserver1NSG: TCP 22 from the laptop IP only, TCP 80 from anywhere</div>
+    <div class="box vm"><b>VM apacheserver1 (Standard_D2s_v4, Ubuntu 22.04 gen2)</b>Apache2 on :80, user ubuntu, key ~/.ssh/apacheserver1-key<br>OS disk 30 GB (/dev/disk/azure/root)<br><span class="tag">cloud-init: datasource GCE first</span><span class="tag">netplan: any NIC, DHCP</span><span class="tag">fstab: no fsck</span></div>
+    <div class="box"><b>Scratch disk apacheserver1-scratch (10 GB, LUN 0)</b>mounted at /mnt/img, holds disk.qcow2<br>published at http://&lt;IP&gt;/disk.qcow2 by Apache (removed after download)</div>
+  </div>
+  <div class="flow"><div class="arrow">&#8594;</div>5. download over HTTP<br>6. convert and tar<br>7. gcloud storage cp<br>8. images create --source-uri</div>
+  <div class="cloud gcp"><h2><span class="badge">GOOGLE CLOUD</span> Project jackson-isiko</h2>
+    <div class="box"><b>Cloud Storage bucket jackson-isiko-apache-migration</b>disk.tar.gz (uniform bucket-level access, us-central1)</div>
+    <div class="box"><b>Compute Engine image apacheserver-image</b>family apacheserver, 31 GB, built from the tar.gz</div>
+    <div class="box vm"><b>VM apacheserver-gcp (e2-micro, us-central1-a)</b>boots the migrated disk: same hostname, same Apache, same files<br>tag http-server, external IP</div>
+    <div class="box net"><b>VPC default</b>firewall allow-http: TCP 80 from 0.0.0.0/0 to tag http-server</div>
+  </div>
+</div>
+<div class="steps">
+  <div class="step"><b>Build (Part 1)</b>Resource group, VM, NSG rules, Apache. Checkpoint: HTTP 200 on the Azure IP.</div>
+  <div class="step"><b>Capture (Part 2)</b>Make the OS cloud-neutral, freeze the root filesystem, qemu-img to a compressed qcow2 on the scratch disk.</div>
+  <div class="step"><b>Transfer (Part 3)</b>Download, verify checksum, remove the link, convert to raw, tar with the oldgnu format, upload to the bucket.</div>
+  <div class="step"><b>Launch (Parts 4 and 5)</b>Image from the bucket, VM from the image, firewall rule, HTTP 200 on the GCP IP, hostname apacheserver1 inside.</div>
+  <div class="step"><b>Clean up (Part 7)</b>destroy-lab1.sh: delete the resource group, the GCP VM, image, bucket and firewall rule.</div>
+</div>
+<p class="legend">Dashed boxes are network scope. Bold boxes are the migrated workload. Data path: Azure OS disk to qcow2 (compressed) to laptop to raw to tar.gz to Cloud Storage to Compute Engine image to VM boot disk. Nothing in GCP is created until Part 3, which is why the lab can be torn down and rebuilt in 25 minutes.</p>
+</div></body></html>

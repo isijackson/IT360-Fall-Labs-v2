@@ -1,0 +1,21 @@
+---
+# Same as nginx.yml, with cache_valid_time so a second run reports changed=0.
+- name: Install and start NGINX
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update APT
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install NGINX
+      apt:
+        name: nginx
+        state: present
+
+    - name: Ensure NGINX is running
+      service:
+        name: nginx
+        state: started
+        enabled: yes

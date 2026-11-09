@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loan-calc
+  labels:
+    app: loan-calc
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: loan-calc
+  template:
+    metadata:
+      labels:
+        app: loan-calc
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.27
+        ports:
+        - containerPort: 80

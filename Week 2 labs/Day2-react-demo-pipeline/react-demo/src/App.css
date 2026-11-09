@@ -1,0 +1,27 @@
+body { margin: 0; background: #f4f6f8; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #1d2733; }
+.App { max-width: 980px; margin: 0 auto; padding: 16px; }
+.header { background: #1f3864; color: #fff; border-radius: 10px; padding: 18px 22px; }
+.header h1 { margin: 0 0 6px; font-size: 1.7rem; }
+.header p { margin: 0 0 10px; opacity: 0.9; }
+.toggle { font-size: 0.9rem; }
+.panel { background: #fff; border-radius: 10px; padding: 14px 18px; margin-top: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.panel h2 { margin: 0 0 10px; font-size: 1.15rem; }
+.filters label { margin-right: 18px; }
+.count { color: #5b6b7c; font-size: 0.9rem; }
+.games { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.card { border: 1px solid #d9e1ea; border-radius: 8px; padding: 10px 12px; position: relative; }
+.card.cancelled { background: #fff4f2; border-color: #f2b8ad; }
+.card.cancelled .teams { text-decoration: line-through; }
+.when { color: #5b6b7c; font-size: 0.85rem; }
+.teams { font-weight: 600; margin: 4px 0; }
+.where { font-size: 0.9rem; }
+.badge { position: absolute; top: 10px; right: 10px; background: #c0392b; color: #fff; border-radius: 4px; padding: 2px 6px; font-size: 0.75rem; }
+.actions { margin-top: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+button { background: #2e75b6; color: #fff; border: 0; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+button:hover { background: #245d91; }
+.add { display: flex; flex-wrap: wrap; gap: 8px; }
+.add input, .add select, .filters input, .filters select { padding: 6px 8px; border: 1px solid #c3ccd6; border-radius: 6px; }
+.error { color: #c0392b; }
+.countdown { font-variant-numeric: tabular-nums; font-weight: 600; color: #1f3864; }
+.concept { display: inline-block; background: #e8f1fb; color: #245d91; border: 1px dashed #7fa8d4; border-radius: 4px; padding: 1px 6px; font-size: 0.72rem; font-weight: 500; vertical-align: middle; }
+.footer { margin-top: 18px; color: #5b6b7c; font-size: 0.85rem; text-align: center; }

@@ -1,0 +1,7 @@
+{
+  "name": "canyon-schedule",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": { "start": "node index.js", "test": "node -e \"require('./index.js'); setTimeout(()=>process.exit(0),500)\"" },
+  "dependencies": { "express": "^4.21.2" }
+}

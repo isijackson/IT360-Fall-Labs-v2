@@ -1,0 +1,32 @@
+
+.games {
+  list-style: none;
+  padding: 0;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.game {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  padding: 10px;
+  margin: 8px 0;
+}
+
+.game button {
+  align-self: center;
+}
+
+.game.cancelled strong {
+  text-decoration: line-through;
+  color: #c0392b;
+}
+
+.build {
+  margin-top: 24px;
+  color: #6b7280;
+  font-size: 0.85rem;
+}

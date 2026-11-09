@@ -1,0 +1,14 @@
+{
+  "gke-01-clusters": [1600, 995],
+  "gke-02-mode-chooser": [1600, 995],
+  "gke-03-autopilot-basics": [1600, 995],
+  "term-01-cluster": [1180, 286],
+  "gke-04-cluster-detail": [1600, 995],
+  "term-02-pods": [1180, 308],
+  "gke-05-workloads": [1600, 995],
+  "term-03-helm": [1180, 286],
+  "gke-06-services": [1600, 995],
+  "term-04-policy": [1180, 726],
+  "term-05-verify": [1180, 792],
+  "term-06-verify2": [1180, 836]
+}

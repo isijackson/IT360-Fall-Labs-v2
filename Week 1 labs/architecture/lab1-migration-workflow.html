@@ -1,0 +1,49 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css">
+<style>
+.lanes{display:grid;grid-template-columns:150px repeat(6,1fr);gap:8px 10px;align-items:stretch}
+.lane{font-weight:700;font-size:16px;padding:10px 10px;border-radius:10px;color:#fff;display:flex;flex-direction:column;justify-content:center;line-height:1.25}.lane small{font-weight:400;font-size:12px;display:block;margin-top:4px}
+.lane.aws{background:#ff9900;color:#111}.lane.az{background:#0078d4}.lane.lap{background:#1e2761}.lane.gcp{background:#34a853}
+.s{border:2px solid #1e2761;border-radius:10px;padding:8px 10px;background:#fff;font-size:13px;line-height:1.3;position:relative;min-height:88px}
+.s b{display:block;font-size:13.5px;margin-bottom:3px}.s .t{position:absolute;top:-11px;right:8px;background:#1e2761;color:#fff;border-radius:999px;font-size:11px;padding:1px 8px;font-weight:700}
+.s.aws{border-color:#ff9900}.s.aws .t{background:#ff9900;color:#111}.s.az{border-color:#0078d4}.s.az .t{background:#0078d4}.s.gcp{border-color:#34a853}.s.gcp .t{background:#34a853}
+.s.gate{background:#fff7e6;border-style:dashed}
+.phase{grid-column:2 / span 6;display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:-2px}
+.phase div{font-size:12px;font-weight:700;color:#1e2761;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #1e2761;padding-bottom:2px}
+.empty{border:1px dashed #c7cde6;border-radius:10px;background:transparent}
+.tot{display:flex;gap:14px;margin-top:14px}.tot div{flex:1;border-radius:10px;padding:8px 12px;font-size:13px;background:#eef2ff;border:1px solid #c7cde6}
+</style></head><body><div id="canvas">
+<h1>Week 1 Lab 1 workflow: one Apache VM leaves AWS or Azure and lands on Google Compute Engine</h1>
+<p class="sub">Four lanes, one procedure. The source cloud builds and captures; the laptop (or Cloud Shell) carries and converts; Google Cloud imports and boots. Times are from the instructor runs of 2026-10-27 (both variants into project jackson-isiko, same afternoon). Gate boxes are the checks that must pass before the next step.</p>
+<div class="lanes">
+  <div></div>
+  <div class="phase"><div>1 Build</div><div>2 Prepare</div><div>3 Capture</div><div>4 Transfer</div><div>5 Import</div><div>6 Validate</div></div>
+  <div class="lane aws">AWS<small>EC2, us-east-2<br>CloudShell or laptop</small></div>
+  <div class="s aws"><span class="t">3 min</span><b>Key pair, security group, t3.micro</b>22 from the caller's IP only, 80 from anywhere; Ubuntu 22.04 AMI; apt install apache2; 10 GB gp3 scratch at /dev/sdf<br><i>Gate: HTTP 200 on the EC2 IP</i></div>
+  <div class="s aws"><span class="t">1 min</span><b>Make the OS cloud-neutral</b>cloud-init datasource GCE before Ec2; netplan matches any NIC; fstab pass 0; cloud-init clean; write migrated-from.txt</div>
+  <div class="s aws"><span class="t">3 min</span><b>Freeze, copy, check, compress</b>drop caches, fsfreeze /, qemu-img -T none to raw on the scratch volume, thaw<br><i>Gate: superblock live = copy (2,068,731)</i>; e2fsck the copy; qcow2 1.19 GB; md5; publish /disk.qcow2</div>
+  <div class="empty"></div><div class="empty"></div>
+  <div class="s aws gate"><span class="t">10 s</span><b>Step 11</b>remove /var/www/html/disk.qcow2 (404). Teardown: terminate instance, delete volume, group, key pair</div>
+  <div class="lane az">AZURE<small>eastus<br>laptop (az)</small></div>
+  <div class="s az"><span class="t">3 min</span><b>Resource group, NSG, Standard_D2s_v4</b>22 from the caller's IP only, 80 from anywhere; Ubuntu 22.04 gen2; apt install apache2; 10 GB scratch disk at LUN 0<br><i>Gate: HTTP 200 on the Azure IP</i></div>
+  <div class="s az"><span class="t">1 min</span><b>Make the OS cloud-neutral</b>datasource GCE before Azure; netplan any NIC; fstab pass 0; walinuxagent off; cloud-init clean; marker file</div>
+  <div class="s az"><span class="t">6 min</span><b>Freeze, copy, check, compress</b>30 GB OS disk: raw copy 4.3 min, check, qcow2 1.7 min<br><i>Gate: superblock live = copy (7,836,155)</i>; qcow2 0.93 GB; md5; publish /disk.qcow2</div>
+  <div class="empty"></div><div class="empty"></div>
+  <div class="s az gate"><span class="t">10 s</span><b>Step 11</b>remove the link (404). Teardown: delete the resource group</div>
+  <div class="lane lap">LAPTOP<small>or Cloud Shell<br>gcloud, qemu-img, gtar</small></div>
+  <div class="s"><span class="t">0 min</span><b>Control plane</b>deploy-lab1.sh &lt;azure|aws|both&gt; jackson-isiko drives every lane; T_ markers in the log feed the step-timing table</div>
+  <div class="empty"></div><div class="empty"></div>
+  <div class="s"><span class="t">AWS 5.5 / Azure 5.6 min</span><b>Download, verify, convert, upload</b>curl disk.qcow2 (md5 must match); qemu-img convert to raw (8 or 30 GB sparse); gtar --format=oldgnu -S to disk.tar.gz (1.13 / 0.88 GB); gcloud storage cp at 34 to 44 MiB/s<br><i>Convert + tar 1.3 / 1.5 min, upload 0.8 / 0.6 min</i></div>
+  <div class="empty"></div><div class="empty"></div>
+  <div class="lane gcp">GOOGLE CLOUD<small>jackson-isiko<br>us-central1-a</small></div>
+  <div class="empty"></div><div class="empty"></div><div class="empty"></div>
+  <div class="s gcp"><span class="t">0.5 min</span><b>Bucket</b>&lt;project&gt;-apache-migration[-aws], uniform access, holds disk.tar.gz</div>
+  <div class="s gcp"><span class="t">AWS 2 / Azure 4 min</span><b>Image, VM, firewall</b>images create --source-uri (8 GB 1.5 min; 31 GB 2 min); instances create e2-micro from the image (Azure: no --boot-disk-size); allow-http to tag http-server<br><i>Boot to HTTP 200: AWS 36 s; Azure 2.4 min (90 s hv_kvp wait)</i></div>
+  <div class="s gcp"><span class="t">1 min</span><b>Prove it is the same server</b>HTTP 200 and the Apache title on the GCP IP; curl /migrated-from.txt names the source VM; serial console: cloud-init finished, Datasource DataSourceGCE, no fsck failure, no panic<br><i>verify-lab1.sh &lt;azure|aws|both&gt;</i></div>
+</div>
+<div class="tot">
+  <div><b>AWS to GCP, measured 2026-10-27:</b> build and capture 7 min in CloudShell; transfer and import 10 min; first HTTP 200 on GCP 17 min after the start. Rerun resumes on the existing instance.</div>
+  <div><b>Azure to GCP, measured 2026-10-27:</b> build and capture 6 min (rerun on the existing VM; a fresh build adds about 3 min); transfer and import 12 min; total 18 min. 2026-10-26 fresh run: 16 min.</div>
+  <div><b>Where the time goes:</b> the frozen raw copy and the download, both proportional to disk size, not to data. Lab 2 is where the same servers get configured; this lab only moves them.</div>
+</div>
+<p class="legend">Three failure modes found on the way, now gates in the procedure: unprepared OS (cloud-init polls the old metadata service; emergency shell), frozen but unrepaired copy (initramfs fsck: Resize inode not valid), stale whole-disk cache (copy claims 2 GB; e2fsck clears the root; kernel panic at /sbin/init). Diagram source: Week 1 labs/architecture/lab1-migration-workflow.html.</p>
+</div></body></html>

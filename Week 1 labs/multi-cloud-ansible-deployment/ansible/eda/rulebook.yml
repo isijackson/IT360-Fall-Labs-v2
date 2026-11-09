@@ -1,0 +1,16 @@
+# Event-Driven Ansible: when a webhook says NGINX is down, re-run the playbook without a human.
+#   pip install ansible-rulebook && ansible-galaxy collection install ansible.eda
+#   ansible-rulebook -i ../inventory.ini -r rulebook.yml       (controller, port 5000 open to your monitor)
+#   curl -X POST -H 'Content-Type: application/json' -d '{"event":"nginx-down"}' http://<CONTROLLER_IP>:5000/endpoint
+- name: Heal NGINX on any client when told it is down
+  hosts: all
+  sources:
+    - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+  rules:
+    - name: nginx-down -> run the playbook
+      condition: event.payload.event == "nginx-down"
+      action:
+        run_playbook:
+          name: ../nginx-idempotent.yml

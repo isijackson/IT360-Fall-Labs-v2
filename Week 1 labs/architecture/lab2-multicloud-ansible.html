@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body><div id="canvas">
+<h1>Week 1 Lab 2: Multi-cloud configuration automation with Ansible</h1>
+<p class="sub">Infrastructure architecture. One Ansible controller on DigitalOcean manages web servers on Google Cloud and Azure over SSH. No agents on the clients, one key pair, one inventory, one playbook, idempotent runs.</p>
+<div class="row">
+  <div class="lap"><h2>Instructor laptop</h2>
+    <div class="box"><b>Provisioning only</b>doctl (DigitalOcean), gcloud (jackson-isiko), az (Ensign College - School Card)<br><span class="tag">deploy-lab2.sh</span><span class="tag">verify-lab2.sh</span><span class="tag">destroy-lab2.sh</span></div>
+    <div class="box">ssh root@controller with the laptop key (DigitalOcean key it360-lab-mac)<br>Copies nginx.yml and nginx-idempotent.yml to the controller</div>
+  </div>
+  <div class="flow"><div class="arrow">&#8594;</div>create droplet<br>install Ansible<br>ssh-keygen fleet key</div>
+  <div class="cloud do ctrl"><h2><span class="badge">DIGITALOCEAN</span> nyc1</h2>
+    <div class="box vm"><b>Droplet ansible-controller (s-1vcpu-1gb, Ubuntu 22.04)</b>Ansible core 2.17 from the PPA<br>Fleet key ~/.ssh/id_rsa (public half goes to every client)<br>~/lab2/inventory.ini: groups [gcp] and [azure], ansible_user=ubuntu<br>~/lab2/nginx.yml: apt update, install nginx, service started and enabled</div>
+    <div class="box"><b>Runs</b>ansible all -m ping<br>ansible-playbook nginx.yml (changed=2 per host)<br>ansible-playbook nginx-idempotent.yml (changed=0 per host)</div>
+  </div>
+  <div class="flow"><div class="arrow">&#8594;</div>SSH :22 as ubuntu<br>key auth only<br>(BatchMode=yes proves it)</div>
+  <div style="flex:1.3;display:flex;flex-direction:column;gap:14px">
+    <div class="cloud gcp"><h2><span class="badge">GOOGLE CLOUD</span> Project jackson-isiko, us-central1-a</h2>
+      <div class="box vm"><b>VM ansible-client-gcp (e2-micro, Ubuntu 22.04)</b>controller key in instance metadata ssh-keys as user ubuntu<br>tags http-server, ansible-client</div>
+      <div class="box net"><b>VPC default firewall</b>default-allow-ssh TCP 22 (or allow-ssh-ansible from the controller IP), default-allow-http TCP 80</div>
+    </div>
+    <div class="cloud az"><h2><span class="badge">AZURE</span> Resource group ansible-lab-rg, eastus</h2>
+      <div class="box vm"><b>VM ansible-client-azure (Standard_B1s, Ubuntu 22.04)</b>controller key passed with --ssh-key-values, user ubuntu</div>
+      <div class="box net"><b>NSG ansible-client-azureNSG</b>allow-ssh-from-controller: TCP 22 from &lt;controller IP&gt;/32 only<br>allow-http: TCP 80 from anywhere</div>
+    </div>
+  </div>
+</div>
+<div class="steps">
+  <div class="step"><b>Part 1</b>Controller droplet, Ansible install, fleet key.</div>
+  <div class="step"><b>Part 2</b>Two clients, one per cloud, each with the controller's public key for user ubuntu and ports 22 and 80 reachable.</div>
+  <div class="step"><b>Part 3</b>Passwordless SSH from the controller to both: hostnames print with BatchMode=yes.</div>
+  <div class="step"><b>Parts 4 and 5</b>Inventory and playbook; run twice, the second run reports changed=0; both IPs serve the NGINX welcome page.</div>
+  <div class="step"><b>Clean up</b>destroy-lab2.sh: droplet, GCP VM (and rule), Azure resource group.</div>
+</div>
+<p class="legend">Why this shape: the controller holds the only private key, so the clients never need credentials for each other; the inventory is the single source of truth for what is managed; the same playbook works on both clouds because Ansible speaks SSH and apt, not a cloud API. Swap DigitalOcean for a laptop or a GitHub Actions runner and nothing else changes.</p>
+</div></body></html>

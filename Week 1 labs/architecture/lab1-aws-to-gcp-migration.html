@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body><div id="canvas">
+<h1>Week 1 Lab 1 (AWS variant): Virtual machine migration, AWS to Google Cloud</h1>
+<p class="sub">Infrastructure architecture. Source: an Ubuntu 22.04 Apache web server on EC2 in us-east-2. Target: the same server, byte for byte, on Google Compute Engine. AWS side driven from the console's CloudShell (or the laptop with an access key); GCP side from the laptop with gcloud, qemu-img and GNU tar.</p>
+<div class="row">
+  <div class="lap"><h2>Instructor laptop</h2>
+    <div class="box"><b>Control plane</b>AWS CloudShell in the browser (console credentials), or AWS_PROFILE=ensign<br>gcloud auth (project jackson-isiko)<br><span class="tag">deploy-lab1.sh</span><span class="tag">verify-lab1.sh</span><span class="tag">rollback-lab1.sh</span></div>
+    <div class="box"><b>Transfer and convert</b>curl disk.qcow2 (about 1 GB)<br>qemu-img convert to raw (8 GB sparse)<br>gtar oldgnu to disk.tar.gz</div>
+  </div>
+  <div class="flow"><div class="arrow">&#8594;</div>1. aws ec2 run-instances<br>2. ssh: apt install apache2<br>3. prepare OS for GCE<br>4. fsfreeze + qemu-img -T none</div>
+  <div class="cloud aws"><h2><span class="badge">AWS</span> Account: Ensign Software Engineering Live, us-east-2</h2>
+    <div class="box net"><b>Default VPC, public subnet (us-east-2c)</b>Security group apacheserver1-sg: TCP 22 from the caller's IP only, TCP 80 from anywhere<br>Key pair apacheserver1-key (.pem in ~/.ssh)</div>
+    <div class="box vm"><b>EC2 apacheserver1 (t3.micro, Ubuntu 22.04 AMI)</b>Apache2 on :80, user ubuntu, public IPv4<br>Root volume 8 GB gp3 (/dev/nvme0n1, root on p1)<br><span class="tag">cloud-init: datasource GCE first</span><span class="tag">netplan: any NIC, DHCP</span><span class="tag">fstab: no fsck</span></div>
+    <div class="box"><b>Scratch volume apacheserver1-scratch (10 GB gp3, /dev/sdf = nvme1n1)</b>mounted at /mnt/img, holds disk.raw then disk.qcow2<br>published at http://&lt;IP&gt;/disk.qcow2 by Apache (removed after download)</div>
+  </div>
+  <div class="flow"><div class="arrow">&#8594;</div>5. download over HTTP<br>6. convert and tar<br>7. gcloud storage cp<br>8. images create --source-uri</div>
+  <div class="cloud gcp"><h2><span class="badge">GOOGLE CLOUD</span> Project jackson-isiko</h2>
+    <div class="box"><b>Cloud Storage bucket jackson-isiko-apache-migration-aws</b>disk.tar.gz (uniform bucket-level access, us-central1)</div>
+    <div class="box"><b>Compute Engine image apacheserver-image-aws</b>family apacheserver-aws, 8 GB, built from the tar.gz</div>
+    <div class="box vm"><b>VM apacheserver-gcp-aws (e2-micro, us-central1-a, 10 GB boot disk)</b>boots the migrated disk: same Apache, same files, marker migrated-from.txt<br>tag http-server, external IP</div>
+    <div class="box net"><b>VPC default</b>firewall allow-http: TCP 80 from 0.0.0.0/0 to tag http-server (shared with the Azure variant)</div>
+  </div>
+</div>
+<div class="steps">
+  <div class="step"><b>Build (Part 1)</b>Key pair, security group, instance, Apache. Checkpoint: HTTP 200 on the EC2 IP.</div>
+  <div class="step"><b>Capture (Part 2)</b>Make the OS cloud-neutral, drop caches, freeze the root, qemu-img -T none to raw, compare superblocks (live = copy), e2fsck the copy, compress to qcow2.</div>
+  <div class="step"><b>Transfer (Part 3)</b>Download, verify checksum, remove the link, convert to raw, tar with the oldgnu format, upload to the bucket.</div>
+  <div class="step"><b>Launch (Parts 4 and 5)</b>Image from the bucket, VM from the image, firewall rule, HTTP 200 on the GCP IP, the AWS marker file served from GCP.</div>
+  <div class="step"><b>Clean up (Part 7)</b>rollback-lab1.sh: terminate the instance, delete the volume, security group and key pair; delete the GCP VM, image and bucket.</div>
+</div>
+<p class="legend">Dashed boxes are network scope. Bold boxes are the migrated workload. The -aws suffix on the GCP names lets this variant and the Azure variant run side by side in one project. Data path: EC2 root volume to raw (frozen, direct I/O) to qcow2 to laptop to raw to tar.gz to Cloud Storage to Compute Engine image to VM boot disk.</p>
+</div></body></html>

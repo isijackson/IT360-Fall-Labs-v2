@@ -1,0 +1,93 @@
+# Hand-written pipeline for the React app: test, container, deploy.
+# Replace the three secret names with the ones in the workflow Deployment Center wrote for you,
+# and APP_NAME with your Web App's name.
+name: ci-cd
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  APP_NAME: my-react-app-yourteam
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install exact dependencies
+        run: npm ci
+      - name: Unit tests
+        run: npm test -- --watchAll=false
+        env:
+          CI: true
+      - name: Production build (with the commit and time shown in the footer)
+        run: REACT_APP_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%MZ) npm run build
+        env:
+          CI: true
+          REACT_APP_BUILD_SHA: ${{ github.sha }}
+      - name: Keep the build for the deploy job
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: build
+
+  container:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sign in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build the image, push it on main
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+  deploy:
+    needs: [test, container]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Get the build from the test job
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: build
+      - name: Sign in to Azure without a password (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_XXXXXXXX }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_XXXXXXXX }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_XXXXXXXX }}
+      - name: Deploy the build folder
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.APP_NAME }}
+          package: .
+      - name: Smoke test the live site
+        run: |
+          sleep 20
+          curl -fsS "https://${APP_NAME}.azurewebsites.net" | grep -o '<title>.*</title>'
