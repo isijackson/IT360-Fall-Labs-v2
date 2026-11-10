@@ -5,7 +5,7 @@
 set -uo pipefail; DRY=0; YES=0
 for a in "$@"; do case "$a" in -n) DRY=1;; -y) YES=1;; *) echo "usage: $0 [-n] [-y]"; exit 2;; esac; done
 C=$(docker ps -a --format '{{.Names}}' | grep -E '^(jenkins|registry)$' | tr '\n' ' ')
-V=$(docker volume ls -q | grep -E '^brewlab-git$' | tr '\n' ' ')
+V=$(docker volume ls -q | grep -E '^brewlab-(git|auth)$' | tr '\n' ' ')
 I=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'menu-board|^it360-jenkins' | tr '\n' ' ')
 # a running container keeps its image in use and makes docker rmi fail, so those containers go too
 M=$(for i in $I; do case "$i" in *menu-board*) docker ps -aq --filter ancestor="$i";; esac; done | sort -u | tr '\n' ' ')

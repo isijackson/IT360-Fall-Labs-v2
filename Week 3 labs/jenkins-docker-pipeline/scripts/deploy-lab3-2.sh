@@ -19,10 +19,15 @@ echo "== Part 0: lab network, local registry, Jenkins image"
 docker network inspect brewlab >/dev/null 2>&1 || docker network create brewlab >/dev/null
 if [ "$REGISTRY_HOST" = "localhost:5005" ]; then
   if ! docker ps --format '{{.Names}}' | grep -qx registry; then
+    # a stopped registry (for example after a reboot) is removed and recreated with the current credential
+    docker rm -f registry >/dev/null 2>&1 || true
     docker pull -q httpd:2.4-alpine >/dev/null; docker pull -q registry:2 >/dev/null
-    T=$(mktemp -d); docker run --rm --entrypoint htpasswd httpd:2.4-alpine -Bbn "$REG_USER" "$REG_PASS" > "$T/htpasswd"
+    # the password file lives in a Docker volume, not a temp folder: macOS clears /var/folders/.../T on reboot,
+    # and a registry whose bind-mounted file has vanished can never start again
+    docker volume inspect brewlab-auth >/dev/null 2>&1 || docker volume create brewlab-auth >/dev/null
+    docker run --rm -v brewlab-auth:/auth --entrypoint sh httpd:2.4-alpine -c "htpasswd -Bbn '$REG_USER' '$REG_PASS' > /auth/htpasswd"
     # host port 5005: macOS AirPlay Receiver listens on 5000 and Lab 4.3 may hold 5001. Inside the lab network the registry is still registry:5000
-    docker run -d --name registry --network brewlab -p 5005:5000 -v "$T/htpasswd:/auth/htpasswd:ro" \
+    docker run -d --name registry --network brewlab -p 5005:5000 -v brewlab-auth:/auth:ro \
       -e REGISTRY_AUTH=htpasswd -e REGISTRY_AUTH_HTPASSWD_REALM=brewlab -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd registry:2 >/dev/null
   fi
 fi
